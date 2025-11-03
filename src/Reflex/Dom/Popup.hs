@@ -5,7 +5,7 @@
 {-# LANGUAGE MultilineStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
+
 
 module Reflex.Dom.Popup(
   PopupConfig(..),
@@ -40,13 +40,7 @@ import Reflex.Dom.Attrs
 import Reflex.Dom (ffor2)
 import qualified Data.Text as T
 import Data.Default (Default(def))
-import GHCJS.DOM.EventM (mouseOffsetXY)
-import JSDOM.Types
-    ( MonadJSM
-    , HTMLElement(..)
-    , uncheckedCastTo
-    )
-import qualified JSDOM.Types as JSDOM
+import JSDOM.Types (MonadJSM)
 
 data PopupConfig t m = PopupConfig
   { _popupConfig_toggleVisibility :: Dynamic t Bool
@@ -78,27 +72,22 @@ popup
      , PerformEvent t m
      , TriggerEvent t m
      , MonadJSM m
-     , RawElement (DomBuilderSpace m) ~ JSDOM.Element
-     , JSDOM.IsHTMLElement JSDOM.Element
-    
-
      )
   => PopupConfig t m
   -> m a
-  -> m a
+  -> m (Event t (), a)
+  -- ^ Returns an event that fires when the popup could be considered dismissed (e.g. via pressing Escape).
+  -- This event does not automatically hide the popup, but it can be fed back into the popup to hide it.
 
 popup cfg widget = do
   let
-      -- Note that it's possible for the popup to be dismissed via e.g. clicking outside with role="dialog"
       attrsExterior :: [Attrs t m]
       attrsExterior =
         ("style" ~: ["position" ~:: "relative"]) :  _popupConfig_containerAttrs cfg
 
       attrsInterior :: [Attrs t m]
       attrsInterior =
-        [
-         "role" ~: "dialog"
-        , "style" ~:
+        ("style" ~:
         ffor2 (_popupConfig_toggleVisibility cfg) (_popupConfig_zIndex cfg) (\isVisible zIndex->
             [ "position" ~:: "absolute"
             , "top" ~:: "0"
@@ -109,22 +98,10 @@ popup cfg widget = do
               (False, True) -> "visibility" ~:: "hidden"
               (False, False) -> "display" ~:: "none"
             ]
-          )
-        ] ++ _popupConfig_interiorAttrs cfg
+          )) : _popupConfig_interiorAttrs cfg
   elAttrs "div" attrsExterior $ do
     (el,a) <- elAttrs' "div" attrsInterior $ do
       widget
     let pressedEsc :: Event t ()
         pressedEsc = keydown Escape el
-        rawEl :: JSDOM.Element
-        rawEl = _element_raw el
-        htmlElement :: HTMLElement
-        htmlElement = JSDOM.toHTMLElement rawEl
-    relativeCoordsE <- wrapDomEvent htmlElement (onEventName Click) mouseOffsetXY
-    let areCoordsOutOfBounds :: Event t ()
-        areCoordsOutOfBounds =
-          flip mapMaybe relativeCoordsE $ \(x, y) ->
-            if x < 0 || y < 0 then Just () else Nothing
-    performEvent_ $ pure () <$ pressedEsc
-    performEvent_ $ pure () <$ areCoordsOutOfBounds
-    pure a
+    pure (pressedEsc, a)

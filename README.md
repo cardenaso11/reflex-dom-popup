@@ -18,6 +18,7 @@ Below is an example of using the popup, toggled by a simple button.
 > {-# Language MultilineStrings #-}
 > {-# Language FlexibleContexts #-}
 > {-# Language TypeOperators #-}
+> {-# LANGUAGE RecursiveDo #-}
 > import Reflex.Dom
 > import Reflex.Dom.Attrs
 > import Reflex.Dom.Popup
@@ -37,24 +38,26 @@ Below is an example of using the popup, toggled by a simple button.
 >      , TriggerEvent t m
 >      , Reflex t
 >      , MonadJSM m
->      , RawElement (DomBuilderSpace m) ~ JSDOM.Element
 >      ) => m ()
 > demoWidget = do
->   text "The dropdown below lets you toggle the visibility of the popup."
->   el "br" blank
+>   text "The button below lets you toggle the visibility of the popup."
 >   buttonToggleE <- button "Click to toggle popup"
->   isVisibleD <- foldDyn (const not) False $ fmap (const True) buttonToggleE
->   popup
->       (def :: PopupConfig t m)
->         { _popupConfig_toggleVisibility = isVisibleD
->         , _popupConfig_hiddenOrNone = False
->         , _popupConfig_interiorAttrs = ["class" ~:
->               ffor isVisibleD (\isVisible -> if isVisible then "popup-interior show" else "popup-interior")]
->         , _popupConfig_containerAttrs = ["style" ~: ["color" ~:: "blue"]]
->         , _popupConfig_zIndex = constDyn Nothing -- default = 1000
->         }
->       (do
->         text "Text inside popup")
+>   el "br" blank
+>   
+>   rec isVisibleD <- foldDyn (const not) True $ fmap (const True) (buttonExitE <> buttonToggleE <> popupClosed)
+>       (popupClosed, buttonExitE) <- popup
+>           (def :: PopupConfig t m)
+>             { _popupConfig_toggleVisibility = isVisibleD
+>             , _popupConfig_hiddenOrNone = False
+>             , _popupConfig_interiorAttrs = ["class" ~:
+>                   ffor isVisibleD (\isVisible -> if isVisible then "popup-interior show" else "popup-interior")]
+>             , _popupConfig_containerAttrs = ["style" ~: ["color" ~:: "blue"], "role" ~: "dialog"]
+>             , _popupConfig_zIndex = constDyn Nothing -- default = 1000
+>             }
+>           (do
+>             text "Text inside popup"
+>             button "Click or esc to exit popup"
+>             )
 >   el "br" blank
 >   text "This is some text that immediately follows the popup, later in the page"
 >   el "br" blank
