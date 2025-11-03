@@ -10,6 +10,7 @@ Below is an example of using the popup, toggled by a simple button.
 
 ```haskell
 
+> {-# OPTIONS_GHC -Werror=missing-fields #-}
 > {-# Language OverloadedStrings #-}
 > {-# Language RecursiveDo #-}
 > {-# Language TypeApplications #-}
@@ -17,7 +18,6 @@ Below is an example of using the popup, toggled by a simple button.
 > import Reflex.Dom
 > import Reflex.Dom.Attrs
 > import Reflex.Dom.Dropdown
-> import qualified Data.Map as M
 > import Data.ByteString (ByteString)
 > import Control.Monad.Fix (MonadFix)
 
@@ -40,10 +40,8 @@ Below is an example of using the popup, toggled by a simple button.
 >       PopupConfig
 >         { _popupConfig_visible = isVisibleD
 >         , _popupConfig_hiddenOrNone = True
->         , _popupConfig_interior = ["class" ~:(
->               pure "popup-interior" <> ffor isVisibleD (\isVisible -> if isVisible then " show" else mempty)
->           )]
->         , _popupConfig_exterior = []
+>         , _popupConfig_interiorAttrs = ["class" ~: ffor isVisibleD (\isVisible -> if isVisible then "popup-interior show" else "popup-interior")]
+>         , _popupConfig_containerAttrs = ["style" ~: "color: blue"]
 >         }
 >       (do
 >         text "Text inside popup")
