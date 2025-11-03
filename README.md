@@ -1,7 +1,7 @@
 reflex-dom-popup
 ===============
 
-Not actually a dropdown specific, but a popup. Use anywhere you normally use popups.
+Use anywhere you normally use popups.
 
 Usage
 -----
@@ -14,22 +14,30 @@ Below is an example of using the popup, toggled by a simple button.
 > {-# Language OverloadedStrings #-}
 > {-# Language RecursiveDo #-}
 > {-# Language TypeApplications #-}
+> {-# Language ScopedTypeVariables #-}
 > {-# Language MultilineStrings #-}
+> {-# Language FlexibleContexts #-}
+> {-# Language TypeOperators #-}
 > import Reflex.Dom
 > import Reflex.Dom.Attrs
-> import Reflex.Dom.Dropdown
+> import Reflex.Dom.Popup
 > import Data.ByteString (ByteString)
 > import Control.Monad.Fix (MonadFix)
+> import JSDOM.Types (MonadJSM)
+> import qualified JSDOM.Types as JSDOM
 
 > main :: IO ()
 > main = mainWidgetWithCss extraStyle demoWidget
 
-> demoWidget :: ( DomBuilder t m
+> demoWidget :: forall t m. ( DomBuilder t m
 >      , MonadFix m
 >      , MonadHold t m
 >      , PostBuild t m
 >      , PerformEvent t m
 >      , TriggerEvent t m
+>      , Reflex t
+>      , MonadJSM m
+>      , RawElement (DomBuilderSpace m) ~ JSDOM.Element
 >      ) => m ()
 > demoWidget = do
 >   text "The dropdown below lets you toggle the visibility of the popup."
@@ -37,11 +45,13 @@ Below is an example of using the popup, toggled by a simple button.
 >   buttonToggleE <- button "Click to toggle popup"
 >   isVisibleD <- foldDyn (const not) False $ fmap (const True) buttonToggleE
 >   popup
->       PopupConfig
->         { _popupConfig_visible = isVisibleD
->         , _popupConfig_hiddenOrNone = True
->         , _popupConfig_interiorAttrs = ["class" ~: ffor isVisibleD (\isVisible -> if isVisible then "popup-interior show" else "popup-interior")]
->         , _popupConfig_containerAttrs = ["style" ~: "color: blue"]
+>       (def :: PopupConfig t m)
+>         { _popupConfig_toggleVisibility = isVisibleD
+>         , _popupConfig_hiddenOrNone = False
+>         , _popupConfig_interiorAttrs = ["class" ~:
+>               ffor isVisibleD (\isVisible -> if isVisible then "popup-interior show" else "popup-interior")]
+>         , _popupConfig_containerAttrs = ["style" ~: ["color" ~:: "blue"]]
+>         , _popupConfig_zIndex = constDyn Nothing -- default = 1000
 >         }
 >       (do
 >         text "Text inside popup")
