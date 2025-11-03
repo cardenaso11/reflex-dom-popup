@@ -40,14 +40,10 @@ Below is an example of using the popup, toggled by a simple button.
 >       PopupConfig
 >         { _popupConfig_visible = isVisibleD
 >         , _popupConfig_hiddenOrNone = True
->         , _popupConfig_extraInterior = mempty
->         , _popupConfig_extraExterior = pure $ def {attrs_style=mconcat
->             [ "color" =: "blue"]}
->         , _popupConfig_extraStyleOnShow = M.fromList
->             [ ("-webkit-animation", "fadeIn 1s")
->             , ("animation", "fadeIn 1s")
->             ]
->         , _popupConfig_identifier = "sample-identifier"
+>         , _popupConfig_interior = ["class" ~:(
+>               pure "popup-interior" <> ffor isVisibleD (\isVisible -> if isVisible then " show" else mempty)
+>           )]
+>         , _popupConfig_exterior = []
 >         }
 >       (do
 >         text "Text inside popup")
@@ -66,7 +62,12 @@ Below is an example of using the popup, toggled by a simple button.
 > @keyframes fadeIn {
 >   from {opacity: 0;}
 >   to {opacity:1 ;}
-> }"""
+> }
+> .popup-interior.show {
+>   -webkit-animation: fadeIn 1s;
+>   animation: fadeIn 1s;
+> }
+>"""
 
 
 ```
