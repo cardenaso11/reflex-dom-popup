@@ -48,11 +48,13 @@ Below is an example of using the popup, toggled by a simple button.
 >       (popupClosed, buttonExitE) <- popup
 >           (def :: PopupConfig t m)
 >             { _popupConfig_toggleVisibility = isVisibleD
->             , _popupConfig_hiddenOrNone = False
+>             , _popupConfig_hiddenOrNone = pure False
 >             , _popupConfig_interiorAttrs = ["class" ~:
 >                   ffor isVisibleD (\isVisible -> if isVisible then "popup-interior show" else "popup-interior")]
 >             , _popupConfig_containerAttrs = ["style" ~: ["color" ~:: "blue"], "role" ~: "dialog"]
 >             , _popupConfig_zIndex = constDyn Nothing -- default = 1000
+>             , _popupConfig_topGapFromContainer = constDyn Nothing -- default = 0
+>             , _popupConfig_leftGapFromContainer = constDyn Nothing -- default = 0
 >             }
 >           (do
 >             text "Text inside popup"
