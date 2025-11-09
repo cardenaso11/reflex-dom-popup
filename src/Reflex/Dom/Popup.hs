@@ -47,7 +47,7 @@ import Data.Maybe (fromMaybe)
 data PopupConfig t m = PopupConfig
   { _popupConfig_toggleVisibility :: Dynamic t Bool
   -- ^ Immediately show or hide the popup. Popup can also be dismissed via e.g. clicking outside with role="dialog"
-  , _popupConfig_hiddenOrNone :: Bool
+  , _popupConfig_hiddenOrNone :: Dynamic t Bool
   -- ^ True = use visibility:hidden when not visible, False = use display:none when not visible
   , _popupConfig_interiorAttrs :: [Attrs t m]
   -- ^ Convenience field that adds extra attributes to the interior content div, which has class popup-interior
@@ -64,7 +64,7 @@ data PopupConfig t m = PopupConfig
 instance Reflex t => Default (PopupConfig t m) where
   def = PopupConfig
     { _popupConfig_toggleVisibility = pure False
-    , _popupConfig_hiddenOrNone = False
+    , _popupConfig_hiddenOrNone = pure False
     , _popupConfig_interiorAttrs = mempty
     , _popupConfig_containerAttrs = mempty
     , _popupConfig_zIndex = pure Nothing
@@ -93,21 +93,22 @@ popup cfg widget = do
       attrsExterior =
         ("style" ~: ["position" ~:: "relative"]) :  _popupConfig_containerAttrs cfg
 
-      configCombinedDyn :: Dynamic t (Bool, Maybe Int, Maybe T.Text, Maybe T.Text)
-      configCombinedDyn = (,,,)
+      configCombinedDyn :: Dynamic t (Bool, Bool, Maybe Int, Maybe T.Text, Maybe T.Text)
+      configCombinedDyn = (,,,,)
         <$> _popupConfig_toggleVisibility cfg
+        <*> _popupConfig_hiddenOrNone cfg
         <*> _popupConfig_zIndex cfg
         <*> _popupConfig_topGapFromContainer cfg
         <*> _popupConfig_leftGapFromContainer cfg
       attrsInterior :: [Attrs t m]
       attrsInterior =
         ("style" ~:
-        ffor configCombinedDyn (\(isVisible,zIndex, topGap, leftGap)->
+        ffor configCombinedDyn (\(isVisible,hiddenOrNone,zIndex, topGap, leftGap)->
             [ "position" ~:: "absolute"
             , "top" ~:: fromMaybe "0" topGap
             , "left" ~:: fromMaybe "0" leftGap
             , "z-index" ~:: maybe "1000" T.show zIndex
-            , case (isVisible, _popupConfig_hiddenOrNone cfg) of
+            , case (isVisible, hiddenOrNone) of
               (True, _) -> mconcat ["visibility" ~:: "visible", "display" ~:: "block"]
               (False, True) -> "visibility" ~:: "hidden"
               (False, False) -> "display" ~:: "none"
