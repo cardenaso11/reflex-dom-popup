@@ -33,7 +33,7 @@ import Reflex.Dom.Core
       RawElement,
       Dynamic,
       mapMaybe,
-      Event
+      Event, GhcjsDomSpace
     )
 import Reflex.Dom.Attrs
 
@@ -41,12 +41,16 @@ import Reflex.Dom (ffor2)
 import qualified Data.Text as T
 import Data.Default (Default(def))
 import GHCJS.DOM.EventM (mouseOffsetXY)
+import qualified GHCJS.DOM.Types as DOM
+import qualified GHCJS.DOM.DOMRectReadOnly as DOM
+import qualified GHCJS.DOM.Element as DOM
 import JSDOM.Types
     ( MonadJSM
     , HTMLElement(..)
     , uncheckedCastTo
     )
 import qualified JSDOM.Types as JSDOM
+import JSDOM.Generated.HTMLElement (IsHTMLElement)
 
 data PopupConfig t m = PopupConfig
   { _popupConfig_toggleVisibility :: Dynamic t Bool
@@ -79,8 +83,9 @@ popup
      , TriggerEvent t m
      , MonadJSM m
      , RawElement (DomBuilderSpace m) ~ JSDOM.Element
+     , DomBuilderSpace m ~ GhcjsDomSpace
      , JSDOM.IsHTMLElement JSDOM.Element
-    
+     , IsHTMLElement HTMLElement
 
      )
   => PopupConfig t m
@@ -120,11 +125,14 @@ popup cfg widget = do
         rawEl = _element_raw el
         htmlElement :: HTMLElement
         htmlElement = JSDOM.toHTMLElement rawEl
-    relativeCoordsE <- wrapDomEvent htmlElement (onEventName Click) mouseOffsetXY
-    let areCoordsOutOfBounds :: Event t ()
-        areCoordsOutOfBounds =
-          flip mapMaybe relativeCoordsE $ \(x, y) ->
-            if x < 0 || y < 0 then Just () else Nothing
-    performEvent_ $ pure () <$ pressedEsc
-    performEvent_ $ pure () <$ areCoordsOutOfBounds
+    -- relativeCoordsE <- wrapDomEvent htmlElement (onEventName Click) mouseOffsetXY
+    -- let areCoordsOutOfBounds :: Event t ()
+    --     areCoordsOutOfBounds =
+    --       flip mapMaybe relativeCoordsE $ \(x, y) ->
+    --         if x < 0 || y < 0 then Just () else Nothing
+    let getCoords e = DOM.liftJSM $ do
+          rect <- DOM.getBoundingClientRect (_element_raw e)
+          y <- DOM.getY rect
+          h <- DOM.getHeight rect
+          return (y,h)
     pure a

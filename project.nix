@@ -46,6 +46,7 @@ in {
       ''
         export TMP=/tmp
         export TMPDIR=/tmp
+        export TEMPDIR=/tmp
         export TEMP=/tmp
         export EM_CACHE=$(mktemp -d -t emcache-ghcjs-XXXXXX)
       ''

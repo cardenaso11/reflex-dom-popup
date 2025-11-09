@@ -24,6 +24,7 @@ Below is an example of using the popup, toggled by a simple button.
 > import Data.ByteString (ByteString)
 > import Control.Monad.Fix (MonadFix)
 > import JSDOM.Types (MonadJSM)
+> import qualified GHCJS.DOM.Types as GHCJS
 > import qualified JSDOM.Types as JSDOM
 
 > main :: IO ()
@@ -38,6 +39,8 @@ Below is an example of using the popup, toggled by a simple button.
 >      , Reflex t
 >      , MonadJSM m
 >      , RawElement (DomBuilderSpace m) ~ JSDOM.Element
+>      , DomBuilderSpace m ~ GhcjsDomSpace
+>      , GHCJS.Element ~ JSDOM.Element
 >      ) => m ()
 > demoWidget = do
 >   text "The dropdown below lets you toggle the visibility of the popup."

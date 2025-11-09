@@ -43,9 +43,11 @@ executable reflex-dom-popup
         reflex-dom,
         reflex-dom-attrs,
         reflex-dom-tables,
+        -- If you don't include ghcjs-dom, you'll get an error saying that jsaddle-dom is invisible
+        -- ghcjs-dom,
         reflex-dom-popup,
         text,
         jsaddle-dom,
-        bytestring
+        bytestring,
     hs-source-dirs:   src-exe
     default-language: Haskell2010
